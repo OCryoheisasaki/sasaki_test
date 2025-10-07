@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>スコアボード</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .score-board {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 400px;
+            margin: auto;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        input {
+            width: 60px;
+            margin: 0 5px;
+        }
+
+        .inning-input {
+            margin-bottom: 10px;
+        }
+
+        hr {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <score-board></score-board>
+</div>
+
+<script>
+    Vue.component('inning-input', {
+        props: ['inning', 'teamA', 'teamB'],
+        template: `
+          <div class="inning-input">
+            <h3>{{ inning }}回</h3>
+            <div>
+              <label>
+                {{ teamA }}：
+                <input type="number" v-model.number="scoreA" @input="emitScore" min="0"/>
+              </label>
+              <label>
+                {{ teamB }}：
+                <input type="number" v-model.number="scoreB" @input="emitScore" min="0"/>
+              </label>
+            </div>
+          </div>
+        `,
+        data() {
+            return {
+                scoreA: 0,
+                scoreB: 0
+            };
+        },
+        methods: {
+            emitScore() {
+                this.$emit('update-score', {
+                    inning: this.inning,
+                    a: this.scoreA,
+                    b: this.scoreB
+                });
+            }
+        }
+    });
+
+    Vue.component('score-board', {
+        template: `
+          <div class="score-board">
+            <h1>スコアボード</h1>
+
+            <div>
+              <label>チームA: <input v-model="teamA" placeholder="チームA名"/></label>
+              <label>チームB: <input v-model="teamB" placeholder="チームB名"/></label>
+            </div>
+
+            <inning-input
+                v-for="i in 9"
+                :key="i"
+                :inning="i"
+                :teamA="teamA"
+                :teamB="teamB"
+                @update-score="updateScore"
+            ></inning-input>
+
+            <hr/>
+
+            <h2>合計スコア</h2>
+            <p>{{ teamA }}：{{ totalA }}</p>
+            <p>{{ teamB }}：{{ totalB }}</p>
+
+            <div v-if="isGameOver">
+              <h2>試合終了</h2>
+              <p v-if="totalA > totalB">勝：{{ teamA }}</p>
+              <p v-else-if="totalB > totalA">勝：{{ teamB }}</p>
+              <p v-else>引き分け</p>
+            </div>
+          </div>
+        `,
+        data() {
+            return {
+                teamA: 'Aチーム',
+                teamB: 'Bチーム',
+                scores: {}
+            };
+        },
+        computed: {
+            totalA() {
+                let total = 0;
+                for (let key in this.scores) {
+                    total += this.scores[key].a;
+                }
+                return total;
+            },
+            totalB() {
+                let total = 0;
+                for (let key in this.scores) {
+                    total += this.scores[key].b;
+                }
+                return total;
+            },
+            isGameOver() {
+                return Object.keys(this.scores).length === 9;
+            }
+        },
+        methods: {
+            updateScore({inning, a, b}) {
+                this.$set(this.scores, inning, {a, b});
+            }
+        }
+    });
+
+    // Vueを起動
+    new Vue({
+        el: '#app'
+    });
+</script>
+</body>
+</html>
