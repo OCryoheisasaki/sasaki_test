@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ひろゆきドラフト</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+</head>
+<body>
+<div id="app">
+  <parent></parent>
+</div>
+<script>
+  Vue.component('parent', {
+    props: ['win_team_name'],
+    template: `
+      <div align="center">
+        <p>{{ win_team_name }}に決定！</p>
+        <img width="500px" src="https://dol.ismcdn.jp/mwimgs/d/5/-/img_88f89f52d1e1833ee8de671a178c006544566.jpg">
+        <div style="display: flex; justify-content: center; align-items: center;">
+          <input-box team_name="ドジャース" @new-bid-price="updateBid"></input-box>
+
+          <input-box team_name="ハムちゃんず" @new-bid-price="updateBid"></input-box>
+
+          <input-box team_name="パドレス" @new-bid-price="updateBid"></input-box>
+        </div>
+      </div>
+    `,
+    data() {
+      return {
+        bids: {
+          "ドジャース": 0,
+          "ハムちゃんず": 0,
+          "パドレス": 0
+        },
+        win_team_name: "パドレス"
+      };
+    },
+    methods: {
+      updateBid({ team, price }) {
+        this.$set(this.bids, team, price);
+
+        let highest_price = 0;
+        let highest_team = "";
+
+        Object.keys(this.bids).forEach(function(team_name) {
+          const current_price = this.bids[team_name];
+
+          if (current_price > highest_price) {
+            highest_price = current_price;
+            highest_team = team_name;
+          }
+        }, this);
+
+        this.win_team_name = highest_team;
+      }
+
+    }
+  });
+
+
+  Vue.component('input-box', {
+    props: ['team_name', 'bid_price'],
+    template: `
+      <div>
+        <p>{{ team_name }}</p>
+        <input type="number" v-model.number="price" min="0" @input="emit">
+        <p>入札価格：{{ price }} ドル</p>
+      </div>
+    `,
+    data: function() {
+      return {
+        price: this.bid_price
+      };
+    },
+    methods: {
+      emit() {
+        this.$emit('new-bid-price', {
+          team: this.team_name,
+          price: this.price
+        });
+      }
+    }
+  });
+
+  new Vue({
+    el: '#app'
+  });
+</script>
+</body>
+</html>
