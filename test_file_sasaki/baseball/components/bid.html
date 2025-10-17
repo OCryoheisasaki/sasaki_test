@@ -7,32 +7,51 @@
 </head>
 <body>
 <div id="app">
-  <parent></parent>
+  <parent win_team_name="誰も入札していません"></parent>
 </div>
 <script>
   Vue.component('parent', {
-    props: ['win_team_name'],
+    props: [
+            'win_team_name'
+    ],
     template: `
       <div align="center">
-        <p>{{ win_team_name }}に決定！</p>
+        <p>{{ win_team_name }}</p>
         <img width="500px" src="https://dol.ismcdn.jp/mwimgs/d/5/-/img_88f89f52d1e1833ee8de671a178c006544566.jpg">
         <div style="display: flex; justify-content: center; align-items: center;">
-          <input-box team_name="ドジャース" @new-bid-price="updateBid"></input-box>
 
-          <input-box team_name="ハムちゃんず" @new-bid-price="updateBid"></input-box>
-
-          <input-box team_name="パドレス" @new-bid-price="updateBid"></input-box>
+          <div v-for="team in bids" style="margin: 10px; border: 1px solid black; padding: 10px;">
+            <input-box
+              :team_name="team.team_name"
+              :bid_price="team.bid_price"
+              @new-bid-price="updateBid">
+            </input-box>
+          </div>
         </div>
       </div>
     `,
     data() {
       return {
-        bids: {
-          "ドジャース": 0,
-          "ハムちゃんず": 0,
-          "パドレス": 0
-        },
-        win_team_name: "パドレス"
+        bids: [{
+            team_name: "ヤクルトスワローズ",
+            bid_price: 0
+          },{
+            team_name: "読売ジャイアンツ",
+            bid_price: 0
+          },{
+            team_name: "阪神タイガース",
+            bid_price: 0
+          },{
+            team_name: "中日ドラゴンズ",
+            bid_price: 0
+          },{
+            team_name: "広島カープ",
+            bid_price: 0
+          },{
+            team_name: "DeNAベイスターズ",
+            bid_price: 0
+        }],
+        win_team_name: ""
       };
     },
     methods: {
@@ -51,7 +70,7 @@
           }
         }, this);
 
-        this.win_team_name = highest_team;
+        this.win_team_name = highest_team + "に決定！";
       }
 
     }
@@ -64,7 +83,7 @@
       <div>
         <p>{{ team_name }}</p>
         <input type="number" v-model.number="price" min="0" @input="emit">
-        <p>入札価格：{{ price }} ドル</p>
+        <p>入札価格：{{ price }} ＄</p>
       </div>
     `,
     data: function() {
