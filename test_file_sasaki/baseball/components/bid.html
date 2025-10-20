@@ -7,16 +7,14 @@
 </head>
 <body>
 <div id="app">
-  <parent win_team_name="誰も入札していません"></parent>
+  <parent></parent>
 </div>
 <script>
   Vue.component('parent', {
-    props: [
-            'win_team_name'
-    ],
     template: `
       <div align="center">
-        <p>{{ win_team_name }}</p>
+        <p v-if="win_team_name">{{ win_team_name }}に決定！</p>
+        <p v-else>ひろゆきには誰も入札していません</p>
         <img width="500px" src="https://dol.ismcdn.jp/mwimgs/d/5/-/img_88f89f52d1e1833ee8de671a178c006544566.jpg">
         <div style="display: flex; justify-content: center; align-items: center;">
 
@@ -51,28 +49,22 @@
             team_name: "DeNAベイスターズ",
             bid_price: 0
         }],
-        win_team_name: ""
+        highest_price: 0,
+        win_team_name: undefined
       };
     },
     methods: {
       updateBid({ team, price }) {
-        this.$set(this.bids, team, price);
-
-        let highest_price = 0;
-        let highest_team = "";
-
-        Object.keys(this.bids).forEach(function(team_name) {
-          const current_price = this.bids[team_name];
-
-          if (current_price > highest_price) {
-            highest_price = current_price;
-            highest_team = team_name;
+        for (let i = 0; i < this.bids.length; i++) {
+          if (this.bids[i].team_name === team) {
+            this.bids[i].bid_price = price;
+            if (price > this.highest_price) {
+              this.highest_price = price;
+              this.win_team_name = this.bids[i].team_name;
+            }
           }
-        }, this);
-
-        this.win_team_name = highest_team + "に決定！";
+        }
       }
-
     }
   });
 
