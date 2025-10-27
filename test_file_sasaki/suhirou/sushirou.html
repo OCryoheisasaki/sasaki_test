@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+</html><!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>スシロー</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+</head>
+<body>
+<div id="app">
+    <caller></caller>
+</div>
+
+<script>
+    Vue.component('caller', {
+        template: `
+      <div>
+        <h2>呼び出し番号：{{ caller_number }}</h2>
+        <waiting @call-customer="handleCallCustomer">
+        </waiting>
+      </div>
+    `,
+        data() {
+            return {
+                caller_number: 0
+            };
+        },
+        methods: {
+            handleCallCustomer(called_customer) {
+                this.caller_number = called_customer;
+            }
+        }
+    });
+
+    Vue.component('waiting', {
+        template: `
+      <div>
+        <h3>スシロー🍣</h3>
+        <button @click="addCustomer">発券</button>
+        <button @click="callCustomer" :disabled="waiting_customers.length === 0">
+          呼び出し
+        </button>
+        <p v-if="waiting_customers.length === 0">現在待機中のお客さんはいません</p>
+        <ul>
+          <li v-for="customer in waiting_customers" :key="customer.number">
+            番号 {{ customer }}
+          </li>
+        </ul>
+      </div>
+    `,
+        data() {
+            return {
+                waiting_customers: [],
+                next_waiting_number: 0
+            };
+        },
+        methods: {
+            addCustomer() {
+                this.next_waiting_number++;
+                this.waiting_customers.push(this.next_waiting_number);
+                this.$emit('new-customer', this.next_waiting_number);
+            },
+            callCustomer() {
+                if (this.waiting_customers.length > 0) {
+                    this.$emit('call-customer', this.waiting_customers.shift());
+                }
+            }
+        }
+    });
+
+    new Vue({
+        el: '#app'
+    });
+</script>
+</body>
+</html>
