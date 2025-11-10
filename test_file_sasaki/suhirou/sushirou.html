@@ -1,13 +1,4 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-
-</body>
-</html><!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -16,61 +7,253 @@
 </head>
 <body>
 <div id="app">
-    <caller></caller>
+    <customer_confirmation_screen></customer_confirmation_screen>
 </div>
 
 <script>
-    Vue.component('caller', {
+    // 呼び出し中リスト
+    Vue.component('called_list', {
+        props: ['called_numbers'],
         template: `
-      <div>
-        <h2>呼び出し番号：{{ caller_number }}</h2>
-        <waiting @call-customer="handleCallCustomer">
-        </waiting>
-      </div>
-    `,
-        data() {
-            return {
-                caller_number: 0
-            };
-        },
-        methods: {
-            handleCallCustomer(called_customer) {
-                this.caller_number = called_customer;
-            }
-        }
+          <div>
+            <table>
+              <tr>
+                <th colspan="5">呼び出し中の番号</th>
+              </tr>
+              <tr v-if="called_numbers.length > 0">
+                <td v-for="called_number in called_numbers" :key="called_number">
+                  {{ called_number }}
+                </td>
+              </tr>
+            </table>
+            <p v-if="called_numbers.length === 0">現在呼び出し中のお客様はいません</p>
+          </div>
+        `
     });
 
-    Vue.component('waiting', {
+    // 待機リスト
+    Vue.component('waiting_list', {
+        props: ['waiting_customers'],
         template: `
-      <div>
-        <h3>スシロー🍣</h3>
-        <button @click="addCustomer">発券</button>
-        <button @click="callCustomer" :disabled="waiting_customers.length === 0">
-          呼び出し
-        </button>
-        <p v-if="waiting_customers.length === 0">現在待機中のお客さんはいません</p>
-        <ul>
-          <li v-for="customer in waiting_customers" :key="customer.number">
-            番号 {{ customer }}
-          </li>
-        </ul>
-      </div>
-    `,
+          <div>
+            <h3>待機中のお客様</h3>
+            <p v-if="waiting_customers.length === 0">現在待機中のお客様はいません</p>
+            <table v-else>
+              <tr>
+                <td v-for="customer in waiting_customers" :key="customer.number">
+                  {{ customer.number }}
+                </td>
+              </tr>
+            </table>
+          </div>
+        `
+    });
+
+    // 発券機
+    Vue.component('ticketing_function', {
+        template: `
+          <div>
+            <h3>発券機</h3>
+            <h1>次の番号は<b>{{ getNextNumber() }}</b></h1>
+            <button @click="addCustomer">整理券発行</button>
+          </div>
+        `,
         data() {
             return {
-                waiting_customers: [],
                 next_waiting_number: 0
             };
         },
         methods: {
             addCustomer() {
                 this.next_waiting_number++;
-                this.waiting_customers.push(this.next_waiting_number);
-                this.$emit('new-customer', this.next_waiting_number);
+                const new_customer = {number: this.next_waiting_number};
+                this.$emit('add-new-customer', new_customer);
             },
-            callCustomer() {
-                if (this.waiting_customers.length > 0) {
-                    this.$emit('call-customer', this.waiting_customers.shift());
+            getNextNumber() {
+                return this.next_waiting_number + 1;
+            }
+        }
+    });
+
+    // スタッフ操作画面（待機中 + 呼び出し一覧）
+    Vue.component('waiting_customer_call_list', {
+        props: ['waiting_customers', 'called_numbers'],
+        template: `
+          <div>
+            <h3>スタッフ画面</h3>
+            <table v-if="waiting_customers.length > 0">
+              <tr>
+                <th>選択</th>
+                <th>番号</th>
+                <th>操作</th>
+              </tr>
+              <tr v-for="customer in waiting_customers" :key="customer.number">
+                <td>
+                  <input type="checkbox"
+                         :value="customer.number"
+                         v-model="selected_numbers">
+                </td>
+                <td>{{ customer.number }}</td>
+                <td>
+                  <button @click="$emit('call-customer', customer.number)">呼び出し</button>
+                </td>
+              </tr>
+            </table>
+            <p v-else>現在待機中のお客様はいません</p>
+            <button @click="callSelected" :disabled="selected_numbers.length === 0">まとめて呼び出し</button>
+            <called_list :called_numbers="called_numbers"></called_list>
+          </div>
+        `,
+        data() {
+            return {
+                selected_numbers: []
+            };
+        },
+        methods: {
+            callSelected() {
+                this.selected_numbers.forEach(number => {
+                    this.$emit('call-customer', number);
+                });
+                this.selected_numbers = [];
+            }
+        }
+    });
+
+
+    Vue.component('customer_entry_exit_screen', {
+        props: ['waiting_customers', 'called_numbers'],
+        template: `
+          <div>
+            <h2>お客様用 入退室画面</h2>
+            <table border="3" style="margin: auto; border-collapse: collapse;">
+              <tr>
+                <th>番号</th>
+                <th>状態 / 操作</th>
+              </tr>
+              <tr v-for="customer in getDisplayCustomers()" :key="customer.number">
+                <td style="padding: 8px; text-align: center;">{{ customer.number }}</td>
+                <td style="padding: 8px; text-align: center;">
+                  <div v-if="customer.called">
+                    <button @click="enter(customer.number)">入室</button>
+                    <button @click="exit(customer.number)">退室</button>
+                  </div>
+                  <div v-else>待機中</div>
+                </td>
+              </tr>
+            </table>
+
+            <h3>入室中のお客様</h3>
+            <table border="1" style="margin: auto; border-collapse: collapse;" v-if="entered_customers.length > 0">
+              <tr>
+                <th>番号</th>
+              </tr>
+              <tr v-for="number in entered_customers" :key="number">
+                <td style="padding: 8px; text-align: center;">{{ number }}</td>
+              </tr>
+            </table>
+            <p v-else>入室中の方はいません</p>
+          </div>
+        `,
+        data() {
+            return {
+                entered_customers: []
+            };
+        },
+        methods: {
+            enter(customer_number) {
+                if (!this.entered_customers.includes(customer_number)) {
+                    this.entered_customers.push(customer_number);
+                    this.$emit('entered', customer_number);
+
+                    let called_number = -1;
+                    for (let i = 0; i < this.called_numbers.length; i++) {
+                        if (this.called_numbers[i] === customer_number) {
+                            called_number = i;
+                            break;
+                        }
+                    }
+                    if (called_number !== -1) {
+                        this.called_numbers.splice(called_number, 1);
+                    }
+                }
+            },
+            exit(customer_number) {
+                const new_list = [];
+                for (let i = 0; i < this.entered_customers.length; i++) {
+                    if (this.entered_customers[i] !== customer_number) {
+                        new_list.push(this.entered_customers[i]);
+                    }
+                }
+                this.entered_customers = new_list;
+            },
+            getDisplayCustomers() {
+                const display = [];
+
+                for (let i = 0; i < this.called_numbers.length; i++) {
+                    display.push({number: this.called_numbers[i], called: true});
+                }
+
+                for (let i = 0; i < this.waiting_customers.length; i++) {
+                    const customer_number = this.waiting_customers[i].number;
+                    if (!this.called_numbers.includes(customer_number)) {
+                        display.push({number: customer_number, called: false});
+                    }
+                }
+
+                return display;
+            }
+        }
+    });
+
+
+    // メイン画面
+    Vue.component('customer_confirmation_screen', {
+        template: `
+          <div>
+            <h1>🍣 呼び出しモニター 🍣</h1>
+
+            <div style="display:flex; justify-content:space-around; margin-bottom:20px;">
+              <called_list :called_numbers="called_numbers"></called_list>
+              <waiting_list :waiting_customers="waiting_customers"></waiting_list>
+            </div>
+
+            <div style="margin-bottom:20px; text-align:center;">
+              <ticketing_function @add-new-customer="addToWaitingList"></ticketing_function>
+            </div>
+
+            <div style="margin-top:20px; text-align:center;">
+              <waiting_customer_call_list
+                  :waiting_customers="waiting_customers"
+                  :called_numbers="called_numbers"
+                  @call-customer="handleCallCustomer"
+              ></waiting_customer_call_list>
+            </div>
+
+            <div style="margin-top:30px; text-align:center;">
+              <customer_entry_exit_screen
+                  :waiting_customers="waiting_customers"
+                  :called_numbers="called_numbers"
+              ></customer_entry_exit_screen>
+            </div>
+          </div>
+        `,
+        data() {
+            return {
+                waiting_customers: [],
+                called_numbers: []
+            };
+        },
+        methods: {
+            addToWaitingList(new_customer) {
+                this.waiting_customers.push(new_customer);
+            },
+            handleCallCustomer(customer_number) {
+                this.called_numbers.push(customer_number);
+                for (let i = 0; i < this.waiting_customers.length; i++) {
+                    if (this.waiting_customers[i].number === customer_number) {
+                        this.waiting_customers.splice(i, 1);
+                        break;
+                    }
                 }
             }
         }
@@ -79,6 +262,33 @@
     new Vue({
         el: '#app'
     });
+
 </script>
 </body>
 </html>
+
+<style>
+    body {
+        font-family: sans-serif;
+        text-align: center;
+        margin: 20px;
+        color: #000;
+        background-color: #fff;
+    }
+
+    table {
+        margin: 0 auto 20px auto;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        border: 1px solid #000;
+        padding: 5px 10px;
+        font-size: 1.2em;
+    }
+
+    button {
+        padding: 5px 10px;
+        margin: 2px;
+    }
+</style>
