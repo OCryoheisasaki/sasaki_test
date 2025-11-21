@@ -23,6 +23,7 @@
               <tr v-if="called_numbers.length > 0">
                 <td v-for="called_number in called_numbers" :key="called_number">
                   {{ called_number }}
+                  <button @click="$emit('return-to-waiting', called_number)">待機に戻す</button>
                 </td>
               </tr>
             </table>
@@ -97,12 +98,13 @@
                 <td>{{ customer.number }}</td>
                 <td>
                   <button @click="$emit('call-customer', customer.number)">呼び出し</button>
+                  <button @click="$emit('remove-customer', customer.number)">削除</button>
                 </td>
               </tr>
             </table>
             <p v-else>現在待機中のお客様はいません</p>
             <button @click="callSelected" :disabled="selected_numbers.length === 0">まとめて呼び出し</button>
-            <called_list :called_numbers="called_numbers"></called_list>
+            <called_list :called_numbers="called_numbers" @return-to-waiting="returnToWaiting"></called_list>
           </div>
         `,
         data() {
@@ -116,6 +118,9 @@
                     this.$emit('call-customer', number);
                 });
                 this.selected_numbers = [];
+            },
+            returnToWaiting(number) {
+                this.$emit('return-to-waiting', number);
             }
         }
     });
@@ -179,13 +184,27 @@
                 }
             },
             exit(customer_number) {
-                const new_list = [];
+                let entered_index = -1;
                 for (let i = 0; i < this.entered_customers.length; i++) {
-                    if (this.entered_customers[i] !== customer_number) {
-                        new_list.push(this.entered_customers[i]);
+                    if (this.entered_customers[i] === customer_number) {
+                        entered_index = i;
+                        break;
                     }
                 }
-                this.entered_customers = new_list;
+                if (entered_index !== -1) {
+                    this.entered_customers.splice(entered_index, 1);
+                }
+
+                let called_index = -1;
+                for (let i = 0; i < this.called_numbers.length; i++) {
+                    if (this.called_numbers[i] === customer_number) {
+                        called_index = i;
+                        break;
+                    }
+                }
+                if (called_index !== -1) {
+                    this.called_numbers.splice(called_index, 1);
+                }
             },
             getDisplayCustomers() {
                 const display = [];
@@ -227,6 +246,8 @@
                   :waiting_customers="waiting_customers"
                   :called_numbers="called_numbers"
                   @call-customer="handleCallCustomer"
+                  @return-to-waiting="handleReturnToWaiting"
+                  @remove-customer="handleRemoveCustomer"
               ></waiting_customer_call_list>
             </div>
 
@@ -250,6 +271,33 @@
             },
             handleCallCustomer(customer_number) {
                 this.called_numbers.push(customer_number);
+                for (let i = 0; i < this.waiting_customers.length; i++) {
+                    if (this.waiting_customers[i].number === customer_number) {
+                        this.waiting_customers.splice(i, 1);
+                        break;
+                    }
+                }
+            },
+            handleReturnToWaiting(customer_number) {
+                const index_number = this.called_numbers.indexOf(customer_number);
+                if (index_number !== -1) {
+                    this.called_numbers.splice(index_number, 1);
+                }
+
+                let exists = false;
+                for (let i = 0; i < this.waiting_customers.length; i++) {
+                    if (this.waiting_customers[i].number === customer_number) {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if (!exists) {
+                    this.waiting_customers.push({ number: customer_number });
+                }
+            }
+,
+            handleRemoveCustomer(customer_number) {
                 for (let i = 0; i < this.waiting_customers.length; i++) {
                     if (this.waiting_customers[i].number === customer_number) {
                         this.waiting_customers.splice(i, 1);
