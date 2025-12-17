@@ -21,15 +21,35 @@
                 <th colspan="5">呼び出し中の番号</th>
               </tr>
               <tr v-if="called_numbers.length > 0">
-                <td v-for="called_number in called_numbers" :key="called_number">
-                  {{ called_number }}
-                  <button @click="$emit('return-to-waiting', called_number)">待機に戻す</button>
+                <td v-for="called in called_numbers" :key="called.number">
+                  {{ called.number }}<br>
+                  <span style="font-size:0.8em;">{{ getElapsedSec(called.called_time) }}秒経過</span>
                 </td>
               </tr>
             </table>
             <p v-if="called_numbers.length === 0">現在呼び出し中のお客様はいません</p>
           </div>
-        `
+        `,
+        data() {
+            return {
+                now: Date.now(),
+                timer: null
+            };
+        },
+        mounted() {
+            var self = this;
+            this.timer = setInterval(function() {
+                self.now = Date.now();
+            }, 1000);
+        },
+        beforeDestroy() {
+            clearInterval(this.timer);
+        },
+        methods: {
+            getElapsedSec: function(called_time) {
+                return Math.max(0, Math.floor((this.now - called_time) / 1000));
+            }
+        }
     });
 
     // 待機リスト
@@ -210,13 +230,20 @@
                 const display = [];
 
                 for (let i = 0; i < this.called_numbers.length; i++) {
-                    display.push({number: this.called_numbers[i], called: true});
+                    display.push({ number: this.called_numbers[i].number, called: true });
                 }
 
                 for (let i = 0; i < this.waiting_customers.length; i++) {
                     const customer_number = this.waiting_customers[i].number;
-                    if (!this.called_numbers.includes(customer_number)) {
-                        display.push({number: customer_number, called: false});
+                    let exists = false;
+                    for (let index = 0; index < this.called_numbers.length; index++) {
+                        if (this.called_numbers[index].number === customer_number) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists) {
+                        display.push({ number: customer_number, called: false });
                     }
                 }
 
@@ -262,15 +289,32 @@
         data() {
             return {
                 waiting_customers: [],
-                called_numbers: []
+                called_numbers: [],
+                timer_id: null
             };
         },
+        mounted() {
+            this.timer_id = setInterval(this.checkCalledTimeout, 1000);
+        },
         methods: {
+            checkCalledTimeout() {
+                const now = Date.now();
+                const called_list = this.called_numbers.slice();
+                for (const called of called_list) {
+                    const elapsed_second = now - called.called_time;
+                    if (elapsed_second >= 60000) {
+                        this.handleReturnToWaiting(called.number);
+                    }
+                }
+            },
             addToWaitingList(new_customer) {
                 this.waiting_customers.push(new_customer);
             },
             handleCallCustomer(customer_number) {
-                this.called_numbers.push(customer_number);
+                this.called_numbers.push({
+                    number: customer_number,
+                    called_time: Date.now()
+                });
                 for (let i = 0; i < this.waiting_customers.length; i++) {
                     if (this.waiting_customers[i].number === customer_number) {
                         this.waiting_customers.splice(i, 1);
@@ -279,7 +323,13 @@
                 }
             },
             handleReturnToWaiting(customer_number) {
-                const index_number = this.called_numbers.indexOf(customer_number);
+                let index_number = -1;
+                for (let i = 0; i < this.called_numbers.length; i++) {
+                    if (this.called_numbers[i].number === customer_number) {
+                        index_number = i;
+                        break;
+                    }
+                }
                 if (index_number !== -1) {
                     this.called_numbers.splice(index_number, 1);
                 }
@@ -291,20 +341,33 @@
                         break;
                     }
                 }
-
                 if (!exists) {
                     this.waiting_customers.push({ number: customer_number });
                 }
-            }
-,
-            handleRemoveCustomer(customer_number) {
+            },
+            getDisplayCustomers() {
+                const display = [];
+
+                for (let i = 0; i < this.called_numbers.length; i++) {
+                    display.push({ number: this.called_numbers[i].number, called: true });
+                }
+
                 for (let i = 0; i < this.waiting_customers.length; i++) {
-                    if (this.waiting_customers[i].number === customer_number) {
-                        this.waiting_customers.splice(i, 1);
-                        break;
+                    const customer_number = this.waiting_customers[i].number;
+                    let exists = false;
+                    for (let index = 0; index < this.called_numbers.length; index++) {
+                        if (this.called_numbers[index].number === customer_number) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists) {
+                        display.push({ number: customer_number, called: false });
                     }
                 }
+                return display;
             }
+
         }
     });
 
