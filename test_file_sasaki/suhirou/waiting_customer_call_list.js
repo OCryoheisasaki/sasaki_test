@@ -1,5 +1,10 @@
 // スタッフ操作画面（待機中 + 呼び出し一覧）
+import called_list from './called_list.js';
+
 export default {
+    components: {
+        'called-list': called_list
+    },
     props: ['waiting_customers', 'called_numbers'],
     template: `
           <div>
@@ -25,7 +30,7 @@ export default {
             </table>
             <p v-else>現在待機中のお客様はいません</p>
             <button @click="callSelected" :disabled="selected_numbers.length === 0">まとめて呼び出し</button>
-            <called_list :called_numbers="called_numbers" @return-to-waiting="returnToWaiting"></called_list>
+            <called-list :called_numbers="called_numbers" @return-to-waiting="returnToWaiting"></called-list>
           </div>
         `,
     data() {

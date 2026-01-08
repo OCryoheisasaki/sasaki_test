@@ -43,15 +43,16 @@ export default {
                 this.entered_customers.push(customer_number);
                 this.$emit('entered', customer_number);
 
-                let called_number = -1;
+                let called_index = -1;
                 for (let i = 0; i < this.called_numbers.length; i++) {
-                    if (this.called_numbers[i] === customer_number) {
-                        called_number = i;
+                    if (this.called_numbers[i].number === customer_number) {
+                        called_index = i;
                         break;
                     }
                 }
-                if (called_number !== -1) {
-                    this.called_numbers.splice(called_number, 1);
+
+                if (called_index !== -1) {
+                    this.called_numbers.splice(called_index, 1);
                 }
             }
         },
@@ -69,7 +70,7 @@ export default {
 
             let called_index = -1;
             for (let i = 0; i < this.called_numbers.length; i++) {
-                if (this.called_numbers[i] === customer_number) {
+                if (this.called_numbers[i].number === customer_number) {
                     called_index = i;
                     break;
                 }
