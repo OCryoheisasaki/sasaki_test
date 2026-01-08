@@ -1,4 +1,4 @@
-Vue.component('customer_entry_exit_screen', {
+export default {
     props: ['waiting_customers', 'called_numbers'],
     template: `
           <div>
@@ -102,4 +102,4 @@ Vue.component('customer_entry_exit_screen', {
             return display;
         }
     }
-});
+}

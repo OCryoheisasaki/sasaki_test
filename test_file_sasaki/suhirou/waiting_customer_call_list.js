@@ -1,5 +1,5 @@
 // スタッフ操作画面（待機中 + 呼び出し一覧）
-Vue.component('waiting_customer_call_list', {
+export default {
     props: ['waiting_customers', 'called_numbers'],
     template: `
           <div>
@@ -44,4 +44,4 @@ Vue.component('waiting_customer_call_list', {
             this.$emit('return-to-waiting', number);
         }
     }
-});
+}

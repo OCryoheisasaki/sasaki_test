@@ -1,5 +1,5 @@
 // 呼び出し中リスト
-Vue.component('called_list', {
+export default {
     props: ['called_numbers'],
     template: `
           <div>
@@ -37,4 +37,4 @@ Vue.component('called_list', {
             return Math.max(0, Math.floor((this.now - called_time) / 1000));
         }
     }
-});
+}

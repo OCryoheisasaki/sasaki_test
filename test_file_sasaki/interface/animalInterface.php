@@ -52,21 +52,53 @@ class Animal implements animalInterface {
     }
 }
 
-class Monkey extends Animal {
+class Monkey extends Animal implements spinInTheAir ,drawPicture{
     public function __construct() {
         parent::__construct("Ape", rand(100, 200), rand(150, 200), "ウキー");
     }
-}
 
-class Chimpanzee extends Animal {
-    public function __construct() {
-        parent::__construct("Chimpanzee", rand(80,180), rand(200, 300), "ウキー");
+    public function spinInTheAir(): string {
+        if ($this->athletic_ability > 150) {
+            return "{$this->name}は空中で1回転した";
+        } else {
+            return "{$this->name}はこけた";
+        }
+    }
+
+    public function drawPicture(): string {
+        if ($this->intelligence > 180) {
+            return "{$this->name}はモネの睡蓮を描いた";
+        } else {
+            return "{$this->name}は絵具を食べ始めた";
+        }
     }
 }
 
-class Cat extends Animal {
+class Chimpanzee extends Animal implements spinInTheAir ,drawPicture{
     public function __construct() {
-        parent::__construct("Cat", 50, rand(80, 120), "ネコと和解せよ");
+        parent::__construct("Chimpanzee", rand(80,180), rand(200, 300), "ウキー");
+    }
+
+    public function spinInTheAir(): string {
+        if ($this->athletic_ability > 150) {
+            return "{$this->name}は空中で1回転した";
+        } else {
+            return "{$this->name}はこけた";
+        }
+    }
+
+    public function drawPicture(): string {
+        return "{$this->name}はモネの睡蓮を描いた";
+    }
+}
+
+class Cat extends Animal implements spinInTheAir {
+    public function __construct(string $name) {
+        parent::__construct($name, rand(300, 400), 50, "ネコと和解せよ");
+    }
+
+    public function spinInTheAir(): string {
+        return "{$this->name}は空中で1回転した";
     }
 }
 
@@ -77,4 +109,12 @@ interface animalInterface {
     public function getCry(): string;
     public function HighAthleticAbilitySkill(): string;
     public function HighIntelligenceSkill(): string;
+}
+
+interface spinInTheAir {
+    public function spinInTheAir(): string;
+}
+
+interface drawPicture {
+    public function drawPicture(): string;
 }

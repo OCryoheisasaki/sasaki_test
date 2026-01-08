@@ -1,117 +1,68 @@
-// メイン画面
-Vue.component('customer_confirmation_screen', {
+import waiting_list from './waiting_list.js';
+import called_list from './called_list.js';
+import ticketing_function from './ticketing_function.js';
+import waiting_customer_call_list from './waiting_customer_call_list.js';
+import customer_entry_exit_screen from './customer_entry_exit_screen.js';
+
+export default {
+    components: {
+        'waiting-list': waiting_list,
+        'called-list': called_list,
+        'waiting-customer-call-list': waiting_customer_call_list,
+        'ticketing-function': ticketing_function,
+        'customer-entry-exit-screen': customer_entry_exit_screen
+    },
     template: `
-          <div>
-            <h1>🍣 呼び出しモニター 🍣</h1>
+      <div>
+        <h1>🍣 呼び出しモニター 🍣</h1>
 
-            <div style="display:flex; justify-content:space-around; margin-bottom:20px;">
-              <called_list :called_numbers="called_numbers"></called_list>
-              <waiting_list :waiting_customers="waiting_customers"></waiting_list>
-            </div>
+        <div style="display:flex; justify-content:space-around;">
+          <called-list :called_numbers="called_numbers"></called-list>
+          <waiting-list :waiting_customers="waiting_customers"></waiting-list>
+        </div>
 
-            <div style="margin-bottom:20px; text-align:center;">
-              <ticketing_function @add-new-customer="addToWaitingList"></ticketing_function>
-            </div>
+        <ticketing-function @add-new-customer="addToWaiting"></ticketing-function>
 
-            <div style="margin-top:20px; text-align:center;">
-              <waiting_customer_call_list
-                  :waiting_customers="waiting_customers"
-                  :called_numbers="called_numbers"
-                  @call-customer="handleCallCustomer"
-                  @return-to-waiting="handleReturnToWaiting"
-                  @remove-customer="handleRemoveCustomer"
-              ></waiting_customer_call_list>
-            </div>
+        <waiting-customer-call-list
+            :waiting_customers="waiting_customers"
+            :called_numbers="called_numbers"
+            @call-customer="callCustomer"
+            @return-to-waiting="returnToWaiting"
+            @remove-customer="removeCustomer"
+        ></waiting-customer-call-list>
 
-            <div style="margin-top:30px; text-align:center;">
-              <customer_entry_exit_screen
-                  :waiting_customers="waiting_customers"
-                  :called_numbers="called_numbers"
-              ></customer_entry_exit_screen>
-            </div>
-          </div>
-        `,
+        <customer-entry-exit-screen
+            :waiting_customers="waiting_customers"
+            :called_numbers="called_numbers"
+        ></customer-entry-exit-screen>
+      </div>
+    `,
     data() {
         return {
             waiting_customers: [],
-            called_numbers: [],
-            timer_id: null
+            called_numbers: []
         };
     },
-    mounted() {
-        this.timer_id = setInterval(this.checkCalledTimeout, 1000);
-    },
     methods: {
-        checkCalledTimeout() {
-            const now = Date.now();
-            const called_list = this.called_numbers.slice();
-            for (const called of called_list) {
-                const elapsed_second = now - called.called_time;
-                if (elapsed_second >= 60000) {
-                    this.handleReturnToWaiting(called.number);
-                }
-            }
+        addToWaiting(customer) {
+            this.waiting_customers.push(customer);
         },
-        addToWaitingList(new_customer) {
-            this.waiting_customers.push(new_customer);
-        },
-        handleCallCustomer(customer_number) {
+        callCustomer(number) {
             this.called_numbers.push({
-                number: customer_number,
+                number,
                 called_time: Date.now()
             });
-            for (let i = 0; i < this.waiting_customers.length; i++) {
-                if (this.waiting_customers[i].number === customer_number) {
-                    this.waiting_customers.splice(i, 1);
-                    break;
-                }
-            }
+            this.waiting_customers =
+                this.waiting_customers.filter(c => c.number !== number);
         },
-        handleReturnToWaiting(customer_number) {
-            let index_number = -1;
-            for (let i = 0; i < this.called_numbers.length; i++) {
-                if (this.called_numbers[i].number === customer_number) {
-                    index_number = i;
-                    break;
-                }
-            }
-            if (index_number !== -1) {
-                this.called_numbers.splice(index_number, 1);
-            }
-
-            let exists = false;
-            for (let i = 0; i < this.waiting_customers.length; i++) {
-                if (this.waiting_customers[i].number === customer_number) {
-                    exists = true;
-                    break;
-                }
-            }
-            if (!exists) {
-                this.waiting_customers.push({ number: customer_number });
-            }
+        returnToWaiting(number) {
+            this.called_numbers =
+                this.called_numbers.filter(c => c.number !== number);
+            this.waiting_customers.push({ number });
         },
-        getDisplayCustomers() {
-            const display = [];
-
-            for (let i = 0; i < this.called_numbers.length; i++) {
-                display.push({ number: this.called_numbers[i].number, called: true });
-            }
-
-            for (let i = 0; i < this.waiting_customers.length; i++) {
-                const customer_number = this.waiting_customers[i].number;
-                let exists = false;
-                for (let index = 0; index < this.called_numbers.length; index++) {
-                    if (this.called_numbers[index].number === customer_number) {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (!exists) {
-                    display.push({ number: customer_number, called: false });
-                }
-            }
-            return display;
+        removeCustomer(number) {
+            this.waiting_customers =
+                this.waiting_customers.filter(c => c.number !== number);
         }
-
     }
-});
+};

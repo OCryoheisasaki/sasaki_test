@@ -1,10 +1,9 @@
 <?php
-$animals = [
-    new Cat(),
-    new Monkey(),
-    new Chimpanzee()
-];
+$cat = new Cat('ましろ');
+$cat2 = new Cat('たま');
+$ape = new Monkey();
+$ape2 = new Monkey();
+$chimpanzee = new Chimpanzee();
+$chimpanzee2 = new Chimpanzee();
 
-foreach ($animals as $animal) {
-    echo $animal->HighIntelligenceSkill() . "<br>";
-}
+echo $cat->getCry();
